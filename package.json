@@ -1,0 +1,13 @@
+{
+  "name": "ingre-egreso-main",
+  "version": "1.0.0",
+  "description": "![Untitled-2025-05-15-1730](https://github.com/user-attachments/assets/5de3f512-98c1-4891-87a6-7c72bc67f974)",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
