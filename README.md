@@ -12,7 +12,7 @@ mkdir -p /home/inh/Reg/data
 docker build --no-cache -t ingre-egreso .
 ```
 
-# // optional :   
+// optional :   
 
 docker run -p 49160:3000 -v /home/inh/Reg/data:/app/data ingre-egreso
 
