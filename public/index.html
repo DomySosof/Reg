@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ingresos & Egresos Chart</title>
+  <script src="https://unpkg.com/lightweight-charts@4.0/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <style>
+    /* Custom animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.5s ease-out;
+    }
+    /* Ensure chart container is properly sized */
+    #chart {
+      width: 100%;
+      max-width: 700px;
+      height: 400px;
+    }
+    /* Customize Flatpickr */
+    .flatpickr-input {
+      width: 100%;
+      padding: 0.5rem 1rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      transition: all 0.2s;
+    }
+    .flatpickr-input:focus {
+      outline: none;
+      ring: 2px;
+      ring-color: #bafd00;
+      border-color: hsl(76, 100%, 50%);
+    }
+    .flatpickr-calendar {
+      font-family: Arial, sans-serif;
+      border-radius: 0.375rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center py-8">
+  <div class="w-full max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Ingresos & Egresos</h1>
+    
+    <!-- Chart Card -->
+    <div class="bg-white shadow-lg rounded-lg p-6 mb-6 animate-fadeIn">
+      <div id="chart"></div>
+    </div>
+
+    <!-- Controls Card -->
+    <div class="bg-white shadow-lg rounded-lg p-6 animate-fadeIn">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <label for="dateInput" class="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
+          <input type="text" id="dateInput" placeholder="Select date" class="flatpickr-input">
+        </div>
+        <div>
+          <label for="leftValueInput" class="block text-sm font-medium text-gray-700 mb-2">Ingresos</label>
+          <input type="number" id="leftValueInput" placeholder="e.g., 23" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+        </div>
+        <div>
+          <label for="rightValueInput" class="block text-sm font-medium text-gray-700 mb-2">Egresos</label>
+          <input type="number" id="rightValueInput" placeholder="e.g., 23" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+        </div>
+        <div class="flex items-end">
+          <button onclick="addData()" class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200">Agregar Datos</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Flatpickr
+    flatpickr("#dateInput", {
+      dateFormat: "Y-m-d",
+      maxDate: "today",
+      theme: "light",
+      allowInput: true,
+      altInput: true,
+      altFormat: "F j, Y",
+      placeholder: "Select date"
+    });
+
+    // Create chart
+    const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+      width: 700,
+      height: 400,
+      rightPriceScale: {
+        visible: true,
+        borderColor: "rgba(197, 203, 2, 0.1)",
+        scaleMargins: { top: 0.1, bottom: 0.1 },
+      },
+      leftPriceScale: {
+        visible: true,
+        borderColor: "rgba(13,13, 13, 1)",
+        scaleMargins: { top: 0.1, bottom: 0.1 },
+      },
+      layout: {
+        background: { type: "solid", color: "#F2F2F2" },
+        textColor: "rgba(13, 13, 13, 0.8)",
+      },
+      grid: {
+        horzLines: { color: "rgba(255, 255, 255, 0.01)" },
+        vertLines: { color: "rgba(255, 255, 255, 0.01)" },
+      },
+      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+      timeScale: {
+        borderColor: "rgba(197, 203, 206, 0.8)",
+        timeVisible: true,
+        secondsVisible: false,
+      },
+      handleScroll: { vertTouchDrag: false },
+    });
+
+    // Create area series
+    const areaSeries1 = chart.addAreaSeries({
+      topColor: "#0D0D0D",
+      bottomColor: "rgb(13,13,13,0.8)",
+      lineColor: "#0D0D0D",
+      lineWidth: 2,
+      priceScaleId: "left",
+    });
+
+    const areaSeries2 = chart.addAreaSeries({
+      topColor: "#8C8C8C",
+      bottomColor: "rgb(140, 140, 140, 0.15)",
+      lineColor: "#8C8C8C",
+      lineWidth: 2,
+      priceScaleId: "right",
+    });
+
+    // Function to update chart data
+    async function updateChart() {
+      try {
+        const response = await fetch(`/api/data/bitcoin`);
+        const data = await response.json();
+
+        // Ensure data is sorted by date to avoid rendering issues
+        data.left.sort((a, b) => new Date(a.time.year, a.time.month - 1, a.time.day) - new Date(b.time.year, b.time.month - 1, b.time.day));
+        data.right.sort((a, b) => new Date(a.time.year, a.time.month - 1, a.time.day) - new Date(b.time.year, b.time.month - 1, b.time.day));
+
+        // Set the data for both series
+        areaSeries1.setData(data.left);
+        areaSeries2.setData(data.right);
+
+        // Configure price scales to auto-scale and reduce margins
+        chart.priceScale("left").applyOptions({
+          autoScale: true,
+          scaleMargins: { top: 0.05, bottom: 0.05 },
+        });
+        chart.priceScale("right").applyOptions({
+          autoScale: true,
+          scaleMargins: { top: 0.05, bottom: 0.05 },
+        });
+
+        // Force the chart to fit the data range
+        chart.timeScale().fitContent();
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        alert('Failed to load chart data.');
+      }
+    }
+
+    // Initialize chart
+    updateChart();
+
+    // Function to add new data
+    async function addData() {
+      const dateInput = document.getElementById('dateInput').value;
+      const leftValue = parseFloat(document.getElementById('leftValueInput').value);
+      const rightValue = parseFloat(document.getElementById('rightValueInput').value);
+
+      // Validate inputs
+      if (!dateInput || isNaN(leftValue) || isNaN(rightValue)) {
+        alert('Please select a valid date and enter numeric values.');
+        return;
+      }
+
+      const dateParts = dateInput.split('-');
+      if (dateParts.length !== 3 || dateParts[0].length !== 4 || dateParts[1].length !== 2 || dateParts[2].length !== 2) {
+        alert('Date must be in YYYY-MM-DD format.');
+        return;
+      }
+
+      const year = parseInt(dateParts[0]);
+      const month = parseInt(dateParts[1]);
+      const day = parseInt(dateParts[2]);
+
+      if (isNaN(year) || isNaN(month) || isNaN(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+        alert('Invalid date values.');
+        return;
+      }
+
+      // Fetch current data to check for duplicates
+      try {
+        const response = await fetch(`/api/data/bitcoin`);
+        const currentData = await response.json();
+
+        // Find if the date already exists in the data
+        let leftData = currentData.left;
+        let rightData = currentData.right;
+
+        const dateStr = `${year}-${month}-${day}`;
+        const existingLeftEntry = leftData.find(entry =>
+          `${entry.time.year}-${entry.time.month}-${entry.time.day}` === dateStr
+        );
+        const existingRightEntry = rightData.find(entry =>
+          `${entry.time.year}-${entry.time.month}-${entry.time.day}` === dateStr
+        );
+
+        // If the date exists, sum the values; otherwise, add a new entry
+        if (existingLeftEntry && existingRightEntry) {
+          existingLeftEntry.value += leftValue;
+          existingRightEntry.value += rightValue;
+
+          // Update the existing data on the server (assuming the server supports updates)
+          await fetch('/api/data', {
+            method: 'PUT', // Use PUT to update existing data
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ currency: 'bitcoin', year, month, day, left_value: existingLeftEntry.value, right_value: existingRightEntry.value })
+          });
+        } else {
+          // Add new data point
+          await fetch('/api/data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ currency: 'bitcoin', year, month, day, left_value: leftValue, right_value: rightValue })
+          });
+        }
+
+        // Refresh the chart
+        updateChart();
+        document.getElementById('dateInput').value = '';
+        document.getElementById('leftValueInput').value = '';
+        document.getElementById('rightValueInput').value = '';
+      } catch (error) {
+        console.error('Error adding data:', error);
+        alert('Failed to add data.');
+      }
+    }
+
+    // Customize time scale with Spanish month abbreviations
+    chart.timeScale().applyOptions({
+      timeVisible: true,
+      secondsVisible: false,
+      tickMarkFormatter: (time, tickMarkType, locale) => {
+        const date = new Date(time.year, time.month - 1, time.day);
+        const month = date.toLocaleString("es-ES", { month: "short" });
+        return month.toLowerCase();
+      },
+    });
+  </script>
+</body>
+</html>
