@@ -1,7 +1,6 @@
 ![grap](https://github.com/user-attachments/assets/5de3f512-98c1-4891-87a6-7c72bc67f974)
 
-![Untitled-2025-05-15-1730](https://github.com/user-attachments/assets/5de3f512-98c1-4891-87a6-7c72bc67f974)
-
+![Untitled-2025-05-15-1730](https://github.com/DomySosof/Reg/blob/d95e948b6afc6b63e4b589bbe7fb7dff4ac3ccbf)
 
 # Docker Init
 
